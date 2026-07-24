@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Self-contained circular Poké Ball on a transparent background. Used as the
+     legacy launcher icon on API < 26 (which has no adaptive-icon masking), so the
+     shape is already a circle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- White ball base. -->
+    <path android:pathData="M54,2 a52,52 0 1,0 0,104 a52,52 0 1,0 0,-104 z"
+        android:fillColor="#F5F6F8" />
+    <!-- Red top half. -->
+    <path android:pathData="M2,54 a52,52 0 0,0 104,0 z" android:fillColor="#DC0A2D" />
+    <!-- Black central band. -->
+    <path android:pathData="M2,49h104v10h-104z" android:fillColor="#0F1419" />
+    <!-- Center button: black ring + white core. -->
+    <path android:pathData="M54,36 a18,18 0 1,0 0,36 a18,18 0 1,0 0,-36 z"
+        android:fillColor="#0F1419" />
+    <path android:pathData="M54,42 a12,12 0 1,0 0,24 a12,12 0 1,0 0,-24 z"
+        android:fillColor="#F5F6F8" />
+</vector>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- A Compose app only needs a minimal Material theme with no action bar;
+         the real theming happens in presentation/theme in Kotlin. -->
+    <style name="Theme.DaggerPokedex" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

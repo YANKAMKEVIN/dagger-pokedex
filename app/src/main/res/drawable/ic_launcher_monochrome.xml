@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Monochrome layer for Android 13+ themed icons. A single-color Poké Ball glyph
+     that the system re-tints to match the user's wallpaper/theme. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer ring (stroked). -->
+    <path android:pathData="M54,5 a49,49 0 1,0 0,98 a49,49 0 1,0 0,-98 z"
+        android:strokeColor="#000000"
+        android:strokeWidth="7"
+        android:fillColor="#00000000" />
+    <!-- Central band. -->
+    <path android:pathData="M6,50h96v8h-96z" android:fillColor="#000000" />
+    <!-- Center button. -->
+    <path android:pathData="M54,38 a16,16 0 1,0 0,32 a16,16 0 1,0 0,-32 z"
+        android:fillColor="#000000" />
+</vector>
