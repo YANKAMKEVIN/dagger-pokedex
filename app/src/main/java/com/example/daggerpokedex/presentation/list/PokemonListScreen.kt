@@ -57,6 +57,7 @@ import com.example.daggerpokedex.presentation.theme.cardColorForId
 @Composable
 fun PokemonListScreen(
     viewModel: PokemonListViewModel,
+    gridState: LazyGridState,
     isMusicPlaying: Boolean,
     showMusicToggle: Boolean,
     onToggleMusic: () -> Unit,
@@ -76,6 +77,7 @@ fun PokemonListScreen(
 
     PokemonListContent(
         state = state,
+        gridState = gridState,
         query = query,
         onQueryChange = { query = it },
         isMusicPlaying = isMusicPlaying,
@@ -91,6 +93,7 @@ fun PokemonListScreen(
 @Composable
 private fun PokemonListContent(
     state: PokemonListState,
+    gridState: LazyGridState,
     query: String,
     onQueryChange: (String) -> Unit,
     isMusicPlaying: Boolean,
@@ -121,14 +124,14 @@ private fun PokemonListContent(
                 state.errorMessage != null && state.pokemons.isEmpty() ->
                     ErrorState(message = state.errorMessage, onRetry = onRetry)
 
-                visiblePokemons.isEmpty() -> Text(
-                    text = "No Pokémon matches \"$query\"",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                visiblePokemons.isEmpty() -> EmptySearchState(
+                    query = query,
+                    onClear = { onQueryChange("") }
                 )
 
                 else -> PokemonGrid(
                     pokemons = visiblePokemons,
+                    gridState = gridState,
                     isLoadingMore = state.isLoadingMore,
                     // Only page while browsing the full, unfiltered list.
                     paginationEnabled = query.isBlank(),
@@ -238,13 +241,12 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
 @Composable
 private fun PokemonGrid(
     pokemons: List<Pokemon>,
+    gridState: LazyGridState,
     isLoadingMore: Boolean,
     paginationEnabled: Boolean,
     onPokemonClick: (Pokemon) -> Unit,
     onLoadMore: () -> Unit,
 ) {
-    val gridState = rememberLazyGridState()
-
     val shouldLoadMore by remember(pokemons.size, paginationEnabled) {
         derivedStateOf { paginationEnabled && gridState.reachedBottom(buffer = 6) }
     }
@@ -337,6 +339,50 @@ private fun PokemonCard(pokemon: Pokemon, onClick: () -> Unit) {
 private fun LazyGridState.reachedBottom(buffer: Int): Boolean {
     val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull() ?: return false
     return lastVisible.index >= layoutInfo.totalItemsCount - 1 - buffer
+}
+
+@Composable
+private fun EmptySearchState(query: String, onClear: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            // Une grosse Poké Ball très discrète en fond
+            Pokeball(
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                filled = false,
+                modifier = Modifier.size(200.dp)
+            )
+            // Un emoji ou une icône qui évoque la recherche infructueuse
+            Text("🔍", fontSize = 48.sp, modifier = Modifier.offset(y = (-10).dp))
+        }
+
+        Text(
+            text = "No results found",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 16.dp)
+        )
+
+        Text(
+            text = "We couldn't find any Pokémon matching \"$query\". Check the spelling or try a number.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
+        )
+
+        Button(
+            onClick = onClear,
+            shape = RoundedCornerShape(50)
+        ) {
+            Text("Clear search")
+        }
+    }
 }
 
 @Composable

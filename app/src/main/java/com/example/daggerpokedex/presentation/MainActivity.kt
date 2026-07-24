@@ -11,6 +11,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -92,6 +94,7 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
     var selectedName by rememberSaveable { mutableStateOf<String?>(null) }
     var seed by remember { mutableStateOf<Pokemon?>(null) }
 
+    val listState = rememberLazyGridState()
     val musicController = rememberMusicController()
     var isMusicPlaying by rememberSaveable { mutableStateOf(false) }
 
@@ -120,6 +123,7 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
                     val listViewModel: PokemonListViewModel = viewModel(factory = viewModelFactory)
                     PokemonListScreen(
                         viewModel = listViewModel,
+                        gridState = listState,
                         isMusicPlaying = isMusicPlaying,
                         showMusicToggle = musicController.hasTrack,
                         onToggleMusic = {
