@@ -41,4 +41,5 @@ fun PokemonDetailDto.toDomain(): PokemonDetail = PokemonDetail(
             value = it.baseStat,
         )
     },
+    cryUrl = cries?.latest,
 )

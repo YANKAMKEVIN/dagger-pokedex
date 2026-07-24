@@ -57,6 +57,9 @@ import com.example.daggerpokedex.presentation.theme.cardColorForId
 @Composable
 fun PokemonListScreen(
     viewModel: PokemonListViewModel,
+    isMusicPlaying: Boolean,
+    showMusicToggle: Boolean,
+    onToggleMusic: () -> Unit,
     onPokemonClick: (Pokemon) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -75,6 +78,9 @@ fun PokemonListScreen(
         state = state,
         query = query,
         onQueryChange = { query = it },
+        isMusicPlaying = isMusicPlaying,
+        showMusicToggle = showMusicToggle,
+        onToggleMusic = onToggleMusic,
         visiblePokemons = visiblePokemons,
         onPokemonClick = onPokemonClick,
         onRetry = viewModel::retry,
@@ -87,6 +93,9 @@ private fun PokemonListContent(
     state: PokemonListState,
     query: String,
     onQueryChange: (String) -> Unit,
+    isMusicPlaying: Boolean,
+    showMusicToggle: Boolean,
+    onToggleMusic: () -> Unit,
     visiblePokemons: List<Pokemon>,
     onPokemonClick: (Pokemon) -> Unit,
     onRetry: () -> Unit,
@@ -97,7 +106,13 @@ private fun PokemonListContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        Header(query = query, onQueryChange = onQueryChange)
+        Header(
+            query = query,
+            onQueryChange = onQueryChange,
+            isMusicPlaying = isMusicPlaying,
+            showMusicToggle = showMusicToggle,
+            onToggleMusic = onToggleMusic
+        )
 
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             when {
@@ -127,7 +142,13 @@ private fun PokemonListContent(
 
 /** Bold title, a decorative Poké Ball peeking from the corner, and a search bar. */
 @Composable
-private fun Header(query: String, onQueryChange: (String) -> Unit) {
+private fun Header(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    isMusicPlaying: Boolean,
+    showMusicToggle: Boolean,
+    onToggleMusic: () -> Unit,
+) {
     Box(modifier = Modifier.fillMaxWidth()) {
         // Faint ball peeking from the top-right.
         Pokeball(
@@ -138,6 +159,23 @@ private fun Header(query: String, onQueryChange: (String) -> Unit) {
                 .offset(x = 40.dp, y = (-30).dp)
                 .size(160.dp),
         )
+
+        if (showMusicToggle) {
+            Surface(
+                onClick = onToggleMusic,
+                shape = RoundedCornerShape(12.dp),
+                color = if (isMusicPlaying) PokeRed.copy(alpha = 0.1f) else Color.Transparent,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 16.dp, end = 16.dp)
+            ) {
+                Text(
+                    text = if (isMusicPlaying) "🔊" else "🔈",
+                    modifier = Modifier.padding(8.dp),
+                    fontSize = 20.sp
+                )
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()

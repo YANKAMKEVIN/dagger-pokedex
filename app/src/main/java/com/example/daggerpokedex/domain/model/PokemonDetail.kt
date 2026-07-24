@@ -9,6 +9,8 @@ data class PokemonDetail(
     val weightKilograms: Double,
     val types: List<String>,
     val stats: List<Stat>,
+    /** URL of the Pokémon's cry (.ogg), or null if unavailable. */
+    val cryUrl: String?,
 ) {
     data class Stat(val name: String, val value: Int)
 }

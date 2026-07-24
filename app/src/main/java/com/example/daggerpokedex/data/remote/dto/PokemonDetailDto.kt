@@ -12,6 +12,13 @@ data class PokemonDetailDto(
     @Json(name = "types") val types: List<TypeSlotDto>,
     @Json(name = "stats") val stats: List<StatSlotDto>,
     @Json(name = "sprites") val sprites: SpritesDto,
+    @Json(name = "cries") val cries: CriesDto?,
+)
+
+@JsonClass(generateAdapter = true)
+data class CriesDto(
+    // A hosted .ogg of the Pokémon's in-game cry, streamed at runtime.
+    @Json(name = "latest") val latest: String?,
 )
 
 @JsonClass(generateAdapter = true)

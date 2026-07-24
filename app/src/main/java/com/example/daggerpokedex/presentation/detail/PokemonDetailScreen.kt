@@ -41,6 +41,7 @@ import com.example.daggerpokedex.domain.model.PokemonDetail
 import com.example.daggerpokedex.presentation.components.Pokeball
 import com.example.daggerpokedex.presentation.components.pokemonSharedBounds
 import com.example.daggerpokedex.presentation.components.pokemonSharedElement
+import com.example.daggerpokedex.presentation.components.rememberCryPlayer
 import com.example.daggerpokedex.presentation.theme.cardColorForId
 import com.example.daggerpokedex.presentation.theme.colorForType
 
@@ -83,6 +84,12 @@ fun PokemonDetailScreen(
     val headerImage = detail?.imageUrl ?: seed?.imageUrl ?: ""
     val headerTypes = detail?.types ?: emptyList()
 
+    // Stream and play the Pokémon's cry once the detail (hence its URL) loads,
+    // then let the user replay it with the speaker button.
+    val cryPlayer = rememberCryPlayer()
+    val cryUrl = detail?.cryUrl
+    LaunchedEffect(cryUrl) { cryUrl?.let(cryPlayer::play) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -96,6 +103,7 @@ fun PokemonDetailScreen(
             types = headerTypes,
             accent = accent,
             onBack = onBack,
+            onCry = cryUrl?.let { url -> { cryPlayer.play(url) } },
         )
 
         when {
@@ -130,6 +138,7 @@ private fun ColoredHeader(
     types: List<String>,
     accent: Color,
     onBack: () -> Unit,
+    onCry: (() -> Unit)? = null,
 ) {
     Box(
         modifier = Modifier
@@ -159,6 +168,23 @@ private fun ColoredHeader(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text("←", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        // Replay the cry (top-right, mirroring the back button).
+        if (onCry != null) {
+            Surface(
+                onClick = onCry,
+                shape = RoundedCornerShape(50),
+                color = Color.White.copy(alpha = 0.25f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(end = 12.dp, top = 12.dp)
+                    .size(44.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text("🔊", fontSize = 20.sp)
+                }
             }
         }
 

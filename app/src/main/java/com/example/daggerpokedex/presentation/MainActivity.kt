@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +25,7 @@ import com.example.daggerpokedex.DaggerPokedexApp
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.presentation.components.LocalNavAnimatedScope
 import com.example.daggerpokedex.presentation.components.LocalSharedTransitionScope
+import com.example.daggerpokedex.presentation.components.rememberMusicController
 import com.example.daggerpokedex.presentation.detail.PokemonDetailScreen
 import com.example.daggerpokedex.presentation.detail.PokemonDetailViewModel
 import com.example.daggerpokedex.presentation.list.PokemonListScreen
@@ -90,6 +92,14 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
     var selectedName by rememberSaveable { mutableStateOf<String?>(null) }
     var seed by remember { mutableStateOf<Pokemon?>(null) }
 
+    val musicController = rememberMusicController()
+    var isMusicPlaying by rememberSaveable { mutableStateOf(false) }
+
+    // Sync the controller with the saved state on first composition or state change
+    LaunchedEffect(isMusicPlaying) {
+        musicController.setPlaying(isMusicPlaying)
+    }
+
     if (showSplash) {
         SplashScreen(onFinished = { showSplash = false })
         return
@@ -110,6 +120,13 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
                     val listViewModel: PokemonListViewModel = viewModel(factory = viewModelFactory)
                     PokemonListScreen(
                         viewModel = listViewModel,
+                        isMusicPlaying = isMusicPlaying,
+                        showMusicToggle = musicController.hasTrack,
+                        onToggleMusic = {
+                            val newState = !isMusicPlaying
+                            isMusicPlaying = newState
+                            musicController.setPlaying(newState)
+                        },
                         onPokemonClick = { pokemon ->
                             seed = pokemon
                             selectedName = pokemon.name
