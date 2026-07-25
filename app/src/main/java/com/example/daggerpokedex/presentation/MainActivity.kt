@@ -96,7 +96,7 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
 
     val listState = rememberLazyGridState()
     val musicController = rememberMusicController()
-    var isMusicPlaying by rememberSaveable { mutableStateOf(false) }
+    var isMusicPlaying by rememberSaveable { mutableStateOf(true) }
 
     // Sync the controller with the saved state on first composition or state change
     LaunchedEffect(isMusicPlaying) {
