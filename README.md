@@ -335,3 +335,9 @@ Ideas to extend the sample and explore more Dagger:
 
 *Built as a teaching reference. Every file in `di/` is commented to be read like
 a tutorial — clone it, open `AppComponent.kt`, and follow the graph.*
+
+## Screenshots
+
+<p align="center">
+  <img src="images/screenshot-home.png" alt="App screenshot" width="300" />
+</p>
