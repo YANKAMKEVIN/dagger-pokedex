@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -87,6 +88,7 @@ fun PokemonListScreen(
         onPokemonClick = onPokemonClick,
         onRetry = viewModel::retry,
         onLoadMore = viewModel::loadNextPage,
+        onRetryLoadMore = viewModel::retryNextPage,
     )
 }
 
@@ -103,6 +105,7 @@ private fun PokemonListContent(
     onPokemonClick: (Pokemon) -> Unit,
     onRetry: () -> Unit,
     onLoadMore: () -> Unit,
+    onRetryLoadMore: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -133,10 +136,12 @@ private fun PokemonListContent(
                     pokemons = visiblePokemons,
                     gridState = gridState,
                     isLoadingMore = state.isLoadingMore,
+                    loadMoreError = state.loadMoreError,
                     // Only page while browsing the full, unfiltered list.
                     paginationEnabled = query.isBlank(),
                     onPokemonClick = onPokemonClick,
                     onLoadMore = onLoadMore,
+                    onRetryLoadMore = onRetryLoadMore,
                 )
             }
         }
@@ -243,9 +248,11 @@ private fun PokemonGrid(
     pokemons: List<Pokemon>,
     gridState: LazyGridState,
     isLoadingMore: Boolean,
+    loadMoreError: String?,
     paginationEnabled: Boolean,
     onPokemonClick: (Pokemon) -> Unit,
     onLoadMore: () -> Unit,
+    onRetryLoadMore: () -> Unit,
 ) {
     val shouldLoadMore by remember(pokemons.size, paginationEnabled) {
         derivedStateOf { paginationEnabled && gridState.reachedBottom(buffer = 6) }
@@ -277,7 +284,32 @@ private fun PokemonGrid(
                     CircularProgressIndicator(color = PokeRed)
                 }
             }
+        } else if (loadMoreError != null && paginationEnabled) {
+            // The auto-load only fires when the end of the grid comes into view: after a failure
+            // the user is already there, so give them an explicit way to load the page again.
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                LoadMoreError(message = loadMoreError, onRetry = onRetryLoadMore)
+            }
         }
+    }
+}
+
+@Composable
+private fun LoadMoreError(message: String, onRetry: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+    ) {
+        Text(
+            text = "Couldn't load more Pokémon. $message",
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedButton(onClick = onRetry) { Text("Retry") }
     }
 }
 

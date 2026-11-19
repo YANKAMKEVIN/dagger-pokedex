@@ -44,7 +44,7 @@ class PokemonListViewModel @Inject constructor(
     fun loadFirstPage() {
         currentPage = 0
         _state.update {
-            it.copy(isLoading = true, errorMessage = null, endReached = false)
+            it.copy(isLoading = true, errorMessage = null, loadMoreError = null, endReached = false)
         }
         viewModelScope.launch {
             when (val result = getPokemonList(page = 0)) {
@@ -70,7 +70,7 @@ class PokemonListViewModel @Inject constructor(
         if (current.isLoading || current.isLoadingMore || current.endReached) return
 
         val nextPage = currentPage + 1
-        _state.update { it.copy(isLoadingMore = true, errorMessage = null) }
+        _state.update { it.copy(isLoadingMore = true, loadMoreError = null) }
         viewModelScope.launch {
             when (val result = getPokemonList(page = nextPage)) {
                 is Resource.Success -> {
@@ -85,12 +85,16 @@ class PokemonListViewModel @Inject constructor(
                 }
 
                 is Resource.Error -> _state.update {
-                    // Keep what we already have; just surface the error.
-                    it.copy(isLoadingMore = false, errorMessage = result.message)
+                    // Keep what we already have; the footer offers to retry this same page
+                    // (currentPage only moves forward on success).
+                    it.copy(isLoadingMore = false, loadMoreError = result.message)
                 }
             }
         }
     }
 
     fun retry() = loadFirstPage()
+
+    /** Retry action of the footer shown when a further page failed. */
+    fun retryNextPage() = loadNextPage()
 }

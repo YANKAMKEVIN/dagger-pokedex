@@ -10,6 +10,8 @@ import com.example.daggerpokedex.domain.model.Pokemon
  *  - [isLoading]     -> the very first page (full-screen spinner).
  *  - [isLoadingMore] -> appending a further page (small footer spinner).
  * [endReached] flips to true once the API returns a short page, so we stop asking.
+ * [errorMessage] is a failure of the first page (full-screen error); [loadMoreError] a failure of
+ * a further page (footer with a retry button, the loaded Pokémon stay on screen).
  */
 data class PokemonListState(
     val isLoading: Boolean = false,
@@ -17,4 +19,5 @@ data class PokemonListState(
     val pokemons: List<Pokemon> = emptyList(),
     val errorMessage: String? = null,
     val endReached: Boolean = false,
+    val loadMoreError: String? = null,
 )
