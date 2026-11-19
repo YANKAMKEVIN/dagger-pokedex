@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -26,6 +27,14 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -208,6 +217,7 @@ private fun Header(
 
 @Composable
 private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+    val focusManager = LocalFocusManager.current
     Surface(
         shape = RoundedCornerShape(50),
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -215,12 +225,15 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+            // Fixed height so the 48 dp clear button does not make the field grow when it appears.
+            modifier = Modifier
+                .heightIn(min = 52.dp)
+                .padding(start = 18.dp, end = 4.dp),
         ) {
             Text("🔍", fontSize = 16.sp)
             Box(modifier = Modifier
-                .padding(start = 12.dp)
-                .fillMaxWidth()) {
+                .padding(start = 12.dp, end = if (query.isEmpty()) 14.dp else 0.dp)
+                .weight(1f)) {
                 if (query.isEmpty()) {
                     Text(
                         text = "e.g. Pikachu or 025",
@@ -236,8 +249,23 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
                         color = MaterialTheme.colorScheme.onSurface,
                     ),
                     cursorBrush = androidx.compose.ui.graphics.SolidColor(PokeRed),
+                    // Filtering is live: the keyboard action just closes the keyboard.
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Search,
+                    ),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+            if (query.isNotEmpty()) {
+                IconButton(
+                    onClick = { onQueryChange("") },
+                    modifier = Modifier.semantics { contentDescription = "Clear search" },
+                ) {
+                    Text("✕", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
