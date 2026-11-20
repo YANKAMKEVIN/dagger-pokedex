@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,12 +35,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.example.daggerpokedex.R
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.domain.model.PokemonDetail
 import com.example.daggerpokedex.presentation.components.Pokeball
@@ -181,7 +184,11 @@ private fun ColoredHeader(
                 .size(44.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text("←", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Icon(
+                    painter = painterResource(R.drawable.ic_arrow_back),
+                    contentDescription = "Back",
+                    tint = Color.White,
+                )
             }
         }
 
@@ -197,7 +204,11 @@ private fun ColoredHeader(
                     .size(44.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("🔊", fontSize = 20.sp)
+                    Icon(
+                        painter = painterResource(R.drawable.ic_volume_up),
+                        contentDescription = "Play cry",
+                        tint = Color.White,
+                    )
                 }
             }
         }

@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -39,8 +40,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.text.KeyboardOptions
@@ -57,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
+import com.example.daggerpokedex.R
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.presentation.components.Pokeball
 import com.example.daggerpokedex.presentation.components.StatusBarIcons
@@ -242,10 +243,13 @@ private fun Header(
                     .align(Alignment.TopEnd)
                     .padding(top = 16.dp, end = 16.dp)
             ) {
-                Text(
-                    text = if (isMusicPlaying) "🔊" else "🔈",
-                    modifier = Modifier.padding(8.dp),
-                    fontSize = 20.sp
+                Icon(
+                    painter = painterResource(
+                        if (isMusicPlaying) R.drawable.ic_music_note else R.drawable.ic_music_off,
+                    ),
+                    contentDescription = if (isMusicPlaying) "Mute music" else "Play music",
+                    tint = if (isMusicPlaying) PokeRed else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(10.dp).size(24.dp),
                 )
             }
         }
@@ -286,7 +290,12 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
                 .heightIn(min = 52.dp)
                 .padding(start = 18.dp, end = 4.dp),
         ) {
-            Text("🔍", fontSize = 16.sp)
+            Icon(
+                painter = painterResource(R.drawable.ic_search),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
+            )
             Box(modifier = Modifier
                 .padding(start = 12.dp, end = if (query.isEmpty()) 14.dp else 0.dp)
                 .weight(1f)) {
@@ -316,11 +325,12 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
                 )
             }
             if (query.isNotEmpty()) {
-                IconButton(
-                    onClick = { onQueryChange("") },
-                    modifier = Modifier.semantics { contentDescription = "Clear search" },
-                ) {
-                    Text("✕", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_close),
+                        contentDescription = "Clear search",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -489,8 +499,13 @@ private fun EmptySearchState(
                 filled = false,
                 modifier = Modifier.size(200.dp)
             )
-            // Un emoji ou une icône qui évoque la recherche infructueuse
-            Text("🔍", fontSize = 48.sp, modifier = Modifier.offset(y = (-10).dp))
+            // Une icône qui évoque la recherche infructueuse
+            Icon(
+                painter = painterResource(R.drawable.ic_search),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(56.dp),
+            )
         }
 
         Text(
