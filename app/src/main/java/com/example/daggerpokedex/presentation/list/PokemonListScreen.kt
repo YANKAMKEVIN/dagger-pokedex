@@ -205,6 +205,11 @@ private fun PokemonListContent(
         Header(
             query = query,
             onQueryChange = onQueryChange,
+            subtitle = listSubtitle(
+                loadedCount = state.pokemons.size,
+                query = query,
+                resultCount = if (visiblePokemons.isEmpty() && lookup is SearchLookup.Found) 1 else visiblePokemons.size,
+            ),
             collapsed = collapsed,
             isMusicPlaying = isMusicPlaying,
             showMusicToggle = showMusicToggle,
@@ -245,6 +250,7 @@ private fun PokemonListContent(
                 else -> PokemonGrid(
                     pokemons = visiblePokemons,
                     gridState = gridState,
+                    endReached = state.endReached,
                     isLoadingMore = state.isLoadingMore,
                     loadMoreError = state.loadMoreError,
                     // Only page while browsing the full, unfiltered list.
@@ -329,6 +335,7 @@ private fun MusicToggle(isMusicPlaying: Boolean, onToggleMusic: () -> Unit, modi
 private fun Header(
     query: String,
     onQueryChange: (String) -> Unit,
+    subtitle: String,
     collapsed: Boolean,
     isMusicPlaying: Boolean,
     showMusicToggle: Boolean,
@@ -379,7 +386,7 @@ private fun Header(
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
-                        text = "Search a Pokémon by name or number",
+                        text = subtitle,
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
@@ -481,6 +488,7 @@ private fun PokemonGrid(
     pokemons: List<Pokemon>,
     gridState: LazyGridState,
     isLoadingMore: Boolean,
+    endReached: Boolean = false,
     loadMoreError: String?,
     paginationEnabled: Boolean,
     onPokemonClick: (Pokemon) -> Unit,
@@ -528,7 +536,31 @@ private fun PokemonGrid(
             item(span = { GridItemSpan(maxLineSpan) }) {
                 LoadMoreError(message = loadMoreError, onRetry = onRetryLoadMore)
             }
+        } else if (endReached && paginationEnabled) {
+            // The whole Pokédex is loaded: say so instead of just stopping.
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                EndOfListFooter()
+            }
         }
+    }
+}
+
+@Composable
+private fun EndOfListFooter() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+    ) {
+        Pokeball(color = PokeRed.copy(alpha = 0.6f), filled = true, modifier = Modifier.size(36.dp))
+        Text(
+            text = "You've seen them all",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
