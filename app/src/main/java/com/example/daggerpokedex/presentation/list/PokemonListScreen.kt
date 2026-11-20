@@ -82,6 +82,7 @@ import kotlinx.coroutines.delay
 import com.example.daggerpokedex.R
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.presentation.components.Pokeball
+import com.example.daggerpokedex.presentation.components.PokedexErrorState
 import com.example.daggerpokedex.presentation.components.StatusBarIcons
 import com.example.daggerpokedex.presentation.components.pokemonSharedBounds
 import com.example.daggerpokedex.presentation.components.pokemonSharedElement
@@ -188,7 +189,7 @@ private fun PokemonListContent(
                 state.isLoading -> SkeletonGrid()
 
                 state.errorMessage != null && state.pokemons.isEmpty() ->
-                    ErrorState(message = state.errorMessage, onRetry = onRetry)
+                    PokedexErrorState(message = state.errorMessage, onRetry = onRetry, accent = PokeRed)
 
                 visiblePokemons.isEmpty() && lookup is SearchLookup.Found -> PokemonGrid(
                     pokemons = listOf(lookup.pokemon),
@@ -648,17 +649,5 @@ private fun EmptySearchState(
                 Text("Clear search")
             }
         }
-    }
-}
-
-@Composable
-private fun ErrorState(message: String, onRetry: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.padding(24.dp),
-    ) {
-        Text(text = message, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
-        Button(onClick = onRetry) { Text("Retry") }
     }
 }

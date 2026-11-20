@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +59,7 @@ import com.example.daggerpokedex.R
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.domain.model.PokemonDetail
 import com.example.daggerpokedex.presentation.components.Pokeball
+import com.example.daggerpokedex.presentation.components.PokedexErrorState
 import com.example.daggerpokedex.presentation.components.pokemonSharedBounds
 import com.example.daggerpokedex.presentation.components.pokemonSharedElement
 import com.example.daggerpokedex.presentation.components.rememberCryPlayer
@@ -144,16 +144,11 @@ fun PokemonDetailScreen(
         when {
             detail != null -> StatsSection(detail = detail, accent = accent)
 
-            state.errorMessage != null -> Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(state.errorMessage!!, textAlign = TextAlign.Center)
-                Button(onClick = { viewModel.load(name) }) { Text("Retry") }
-            }
+            state.errorMessage != null -> PokedexErrorState(
+                message = state.errorMessage!!,
+                onRetry = { viewModel.load(name) },
+                accent = accent,
+            )
 
             else -> Box(
                 modifier = Modifier
