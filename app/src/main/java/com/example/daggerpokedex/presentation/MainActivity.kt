@@ -99,7 +99,8 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
 
     val listState = rememberLazyGridState()
     val musicController = rememberMusicController()
-    var isMusicPlaying by rememberSaveable { mutableStateOf(true) }
+    // Plays by default, but a user who turned it off finds it off at the next launch.
+    var isMusicPlaying by rememberSaveable { mutableStateOf(musicController.savedPreference) }
 
     // Sync the controller with the saved state on first composition or state change
     LaunchedEffect(isMusicPlaying) {
@@ -153,6 +154,7 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
                         seed = seed?.takeIf { it.name == name },
                         viewModel = detailViewModel,
                         onBack = { selectedName = null },
+                        onCryPlayingChange = musicController::duck,
                     )
                 }
             }

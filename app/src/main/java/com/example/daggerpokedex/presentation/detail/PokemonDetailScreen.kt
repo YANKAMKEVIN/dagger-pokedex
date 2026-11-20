@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -64,6 +65,7 @@ fun PokemonDetailScreen(
     seed: Pokemon?,
     viewModel: PokemonDetailViewModel,
     onBack: () -> Unit,
+    onCryPlayingChange: (Boolean) -> Unit = {},
 ) {
     LaunchedEffect(name) { viewModel.load(name) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -97,6 +99,10 @@ fun PokemonDetailScreen(
     val cryPlayer = rememberCryPlayer()
     val cryUrl = detail?.cryUrl
     LaunchedEffect(cryUrl) { cryUrl?.let(cryPlayer::play) }
+    // Lets the background music step aside while the cry plays.
+    val isCryPlaying = cryPlayer.isPlaying
+    LaunchedEffect(isCryPlaying) { onCryPlayingChange(isCryPlaying) }
+    DisposableEffect(Unit) { onDispose { onCryPlayingChange(false) } }
 
     // The colored header runs under the status bar: white icons, like the header text.
     StatusBarIcons(darkIcons = false)
