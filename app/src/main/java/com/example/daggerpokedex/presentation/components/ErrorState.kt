@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.daggerpokedex.R
+import com.example.daggerpokedex.presentation.theme.contentColorOn
 
 /**
  * Loading failure (list or detail), laid out like the "No results found" state: faint
@@ -75,7 +76,7 @@ fun PokedexErrorState(
         Button(
             onClick = onRetry,
             shape = RoundedCornerShape(50),
-            colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Color.White),
+            colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = contentColorOn(accent)),
         ) {
             Text("Try again")
         }

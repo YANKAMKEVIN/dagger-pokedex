@@ -1,6 +1,7 @@
 package com.example.daggerpokedex.presentation.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 /**
  * Canonical Pokémon **type** colors, used to tint the detail header and stat bars.
@@ -29,6 +30,16 @@ private val typeColors: Map<String, Color> = mapOf(
 
 /** Brand red used for the splash and primary accents (Poké Ball red). */
 val PokeRed = Color(0xFFDC0A2D)
+
+/** Dark text for light accents (same navy as the dark theme background). */
+val DarkInk = Color(0xFF1B1B2F)
+
+/**
+ * Text and icon color that stays readable on [background]: dark ink on light colors
+ * (electric yellow, ice cyan, ground sand), white on the others.
+ */
+fun contentColorOn(background: Color): Color =
+    if (background.luminance() > 0.5f) DarkInk else Color.White
 
 /** Returns the color for a type name (case-insensitive), or a neutral fallback. */
 fun colorForType(type: String): Color =

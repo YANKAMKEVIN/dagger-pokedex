@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,6 +69,7 @@ import com.example.daggerpokedex.presentation.components.rememberCryPlayer
 import com.example.daggerpokedex.presentation.components.StatusBarIcons
 import com.example.daggerpokedex.presentation.theme.cardColorForId
 import com.example.daggerpokedex.presentation.theme.colorForType
+import com.example.daggerpokedex.presentation.theme.contentColorOn
 import kotlin.math.abs
 
 /**
@@ -107,6 +109,8 @@ fun PokemonDetailScreen(
         if (detail != null) colorForType(detail.types.firstOrNull() ?: "normal")
         else cardColorForId(headerId)
     val accent by animateColorAsState(targetAccent, tween(450), label = "accent")
+    // White on most type colors, dark on the light ones (Pikachu's yellow, ice cyan...).
+    val onAccent by animateColorAsState(contentColorOn(targetAccent), tween(450), label = "onAccent")
 
     val headerName = detail?.name ?: seed?.name ?: name
     val headerImage = detail?.imageUrl ?: seed?.imageUrl ?: ""
@@ -122,8 +126,8 @@ fun PokemonDetailScreen(
     LaunchedEffect(isCryPlaying) { onCryPlayingChange(isCryPlaying) }
     DisposableEffect(Unit) { onDispose { onCryPlayingChange(false) } }
 
-    // The colored header runs under the status bar: white icons, like the header text.
-    StatusBarIcons(darkIcons = false)
+    // The colored header runs under the status bar: icons in the same color as its text.
+    StatusBarIcons(darkIcons = contentColorOn(targetAccent) != Color.White)
 
     Column(
         modifier = Modifier
@@ -137,6 +141,7 @@ fun PokemonDetailScreen(
             imageUrl = headerImage,
             types = headerTypes,
             accent = accent,
+            contentColor = onAccent,
             onBack = onBack,
             onCry = cryUrl?.let { url -> { cryPlayer.play(url) } },
             isCryPlaying = isCryPlaying,
@@ -173,6 +178,7 @@ private fun ColoredHeader(
     imageUrl: String,
     types: List<String>,
     accent: Color,
+    contentColor: Color,
     onBack: () -> Unit,
     onCry: (() -> Unit)? = null,
     isCryPlaying: Boolean = false,
@@ -221,7 +227,7 @@ private fun ColoredHeader(
         Surface(
             onClick = onBack,
             shape = RoundedCornerShape(50),
-            color = Color.White.copy(alpha = 0.25f),
+            color = contentColor.copy(alpha = 0.25f),
             modifier = Modifier
                 .padding(start = 12.dp, top = 12.dp + statusBarTop)
                 .size(44.dp),
@@ -230,7 +236,7 @@ private fun ColoredHeader(
                 Icon(
                     painter = painterResource(R.drawable.ic_arrow_back),
                     contentDescription = "Back",
-                    tint = Color.White,
+                    tint = contentColor,
                 )
             }
         }
@@ -251,7 +257,7 @@ private fun ColoredHeader(
             Surface(
                 onClick = onCry,
                 shape = RoundedCornerShape(50),
-                color = Color.White.copy(alpha = 0.25f),
+                color = contentColor.copy(alpha = 0.25f),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = 12.dp, top = 12.dp + statusBarTop)
@@ -265,7 +271,7 @@ private fun ColoredHeader(
                     Icon(
                         painter = painterResource(R.drawable.ic_volume_up),
                         contentDescription = "Play cry",
-                        tint = Color.White,
+                        tint = contentColor,
                     )
                 }
             }
@@ -278,19 +284,19 @@ private fun ColoredHeader(
         ) {
             Text(
                 text = "#%03d".format(id),
-                color = Color.White.copy(alpha = 0.85f),
+                color = contentColor.copy(alpha = 0.85f),
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
             )
             Text(
                 text = name,
-                color = Color.White,
+                color = contentColor,
                 fontWeight = FontWeight.Black,
                 fontSize = 34.sp,
             )
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                types.forEach { type -> TypeChip(type) }
+                types.forEach { type -> TypeChip(type, outline = contentColor) }
             }
         }
 
@@ -309,6 +315,7 @@ private fun ColoredHeader(
         neighbors.previous?.let { previous ->
             NeighborButton(
                 pokemon = previous,
+                contentColor = contentColor,
                 isNext = false,
                 onClick = { onNavigate(previous) },
                 modifier = Modifier
@@ -319,6 +326,7 @@ private fun ColoredHeader(
         neighbors.next?.let { next ->
             NeighborButton(
                 pokemon = next,
+                contentColor = contentColor,
                 isNext = true,
                 onClick = { onNavigate(next) },
                 modifier = Modifier
@@ -331,11 +339,17 @@ private fun ColoredHeader(
 
 /** "‹ #024" / "#026 ›" pill that flips to the neighboring Pokémon. */
 @Composable
-private fun NeighborButton(pokemon: Pokemon, isNext: Boolean, onClick: () -> Unit, modifier: Modifier) {
+private fun NeighborButton(
+    pokemon: Pokemon,
+    contentColor: Color,
+    isNext: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
-        color = Color.White.copy(alpha = 0.25f),
+        color = contentColor.copy(alpha = 0.25f),
         modifier = modifier.semantics {
             contentDescription = (if (isNext) "Next: " else "Previous: ") + pokemon.name
         },
@@ -347,16 +361,16 @@ private fun NeighborButton(pokemon: Pokemon, isNext: Boolean, onClick: () -> Uni
                 .padding(start = if (isNext) 12.dp else 4.dp, end = if (isNext) 4.dp else 12.dp),
         ) {
             if (!isNext) {
-                Icon(painterResource(R.drawable.ic_chevron_left), contentDescription = null, tint = Color.White)
+                Icon(painterResource(R.drawable.ic_chevron_left), contentDescription = null, tint = contentColor)
             }
             Text(
                 text = "#%03d".format(pokemon.id),
-                color = Color.White,
+                color = contentColor,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
             )
             if (isNext) {
-                Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = Color.White)
+                Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = contentColor)
             }
         }
     }
@@ -393,15 +407,18 @@ private fun StatsSection(detail: PokemonDetail, accent: Color) {
     }
 }
 
+/** A type in its own color, outlined so it stands out even on a header of the same color. */
 @Composable
-private fun TypeChip(type: String) {
+private fun TypeChip(type: String, outline: Color) {
+    val color = colorForType(type)
     Surface(
         shape = RoundedCornerShape(50),
-        color = Color.White.copy(alpha = 0.25f),
+        color = color,
+        border = BorderStroke(1.5.dp, outline.copy(alpha = 0.6f)),
     ) {
         Text(
             text = type,
-            color = Color.White,
+            color = contentColorOn(color),
             fontWeight = FontWeight.SemiBold,
             fontSize = 14.sp,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
