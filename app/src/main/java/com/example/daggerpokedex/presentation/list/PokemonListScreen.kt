@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.presentation.components.Pokeball
 import com.example.daggerpokedex.presentation.components.StatusBarIcons
@@ -88,7 +89,8 @@ fun PokemonListScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
 
-    // Search filters the already-loaded page(s) by name or Pokédex number.
+    // Search filters the already-loaded page(s) by name or Pokédex number (and falls back to a
+    // lookup in the whole Pokédex, below, when nothing matches).
     val visiblePokemons = remember(state.pokemons, query) {
         val q = query.trim()
         if (q.isEmpty()) state.pokemons
@@ -97,10 +99,26 @@ fun PokemonListScreen(
         }
     }
 
+    // Nothing loaded matches: after a short pause in typing, look the query up in the whole
+    // Pokédex (by exact name or number) instead of answering "no results" straight away.
+    val lookupKey = remember(query) { PokemonListViewModel.lookupKey(query) }
+    val needsLookup = lookupKey != null && visiblePokemons.isEmpty() &&
+        !state.isLoading && state.pokemons.isNotEmpty()
+    LaunchedEffect(lookupKey, needsLookup) {
+        if (needsLookup) {
+            delay(400)
+            viewModel.lookUp(query)
+        }
+    }
+    val lookup = state.lookup?.takeIf { needsLookup && it.query == lookupKey }
+
     PokemonListContent(
         state = state,
         gridState = gridState,
         query = query,
+        // Waiting for the debounce or the API: show a spinner rather than a premature "no results".
+        isLookingUp = needsLookup && (lookup == null || lookup is SearchLookup.Loading),
+        lookup = lookup,
         onQueryChange = { query = it },
         isMusicPlaying = isMusicPlaying,
         showMusicToggle = showMusicToggle,
@@ -118,6 +136,8 @@ private fun PokemonListContent(
     state: PokemonListState,
     gridState: LazyGridState,
     query: String,
+    isLookingUp: Boolean,
+    lookup: SearchLookup?,
     onQueryChange: (String) -> Unit,
     isMusicPlaying: Boolean,
     showMusicToggle: Boolean,
@@ -154,8 +174,26 @@ private fun PokemonListContent(
                 state.errorMessage != null && state.pokemons.isEmpty() ->
                     ErrorState(message = state.errorMessage, onRetry = onRetry)
 
+                visiblePokemons.isEmpty() && lookup is SearchLookup.Found -> PokemonGrid(
+                    pokemons = listOf(lookup.pokemon),
+                    gridState = rememberLazyGridState(),
+                    isLoadingMore = false,
+                    loadMoreError = null,
+                    paginationEnabled = false,
+                    onPokemonClick = onPokemonClick,
+                    onLoadMore = {},
+                    onRetryLoadMore = {},
+                )
+
+                visiblePokemons.isEmpty() && isLookingUp -> CircularProgressIndicator(color = PokeRed)
+
                 visiblePokemons.isEmpty() -> EmptySearchState(
                     query = query,
+                    // Offline lookup: we only know the loaded Pokémon do not match.
+                    loadedCount = if (lookup is SearchLookup.NotFound) null else state.pokemons.size,
+                    canLoadMore = !state.endReached,
+                    isLoadingMore = state.isLoadingMore,
+                    onLoadMore = onLoadMore,
                     onClear = { onQueryChange("") }
                 )
 
@@ -424,8 +462,19 @@ private fun LazyGridState.reachedBottom(buffer: Int): Boolean {
     return lastVisible.index >= layoutInfo.totalItemsCount - 1 - buffer
 }
 
+/**
+ * @param loadedCount null when the whole Pokédex was searched; otherwise only the [loadedCount]
+ *   Pokémon loaded so far could be searched (offline), and more can be loaded if [canLoadMore].
+ */
 @Composable
-private fun EmptySearchState(query: String, onClear: () -> Unit) {
+private fun EmptySearchState(
+    query: String,
+    loadedCount: Int?,
+    canLoadMore: Boolean,
+    isLoadingMore: Boolean,
+    onLoadMore: () -> Unit,
+    onClear: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -452,18 +501,32 @@ private fun EmptySearchState(query: String, onClear: () -> Unit) {
         )
 
         Text(
-            text = "We couldn't find any Pokémon matching \"$query\". Check the spelling or try a number.",
+            text = if (loadedCount == null) {
+                "We couldn't find any Pokémon matching \"$query\". Check the spelling or try a number."
+            } else {
+                "None of the first $loadedCount Pokémon loaded match \"$query\", " +
+                    "and the full Pokédex can't be searched right now."
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
         )
 
-        Button(
-            onClick = onClear,
-            shape = RoundedCornerShape(50)
-        ) {
-            Text("Clear search")
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (loadedCount != null && canLoadMore) {
+                if (isLoadingMore) {
+                    CircularProgressIndicator(color = PokeRed, modifier = Modifier.size(32.dp))
+                } else {
+                    OutlinedButton(onClick = onLoadMore, shape = RoundedCornerShape(50)) { Text("Load more") }
+                }
+            }
+            Button(
+                onClick = onClear,
+                shape = RoundedCornerShape(50)
+            ) {
+                Text("Clear search")
+            }
         }
     }
 }
