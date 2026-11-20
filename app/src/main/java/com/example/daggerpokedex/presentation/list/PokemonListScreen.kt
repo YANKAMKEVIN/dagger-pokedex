@@ -1,5 +1,10 @@
 package com.example.daggerpokedex.presentation.list
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,6 +59,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
@@ -64,6 +74,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import kotlinx.coroutines.delay
 import com.example.daggerpokedex.R
 import com.example.daggerpokedex.domain.model.Pokemon
@@ -170,7 +184,8 @@ private fun PokemonListContent(
 
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             when {
-                state.isLoading -> CircularProgressIndicator(color = PokeRed)
+                // Ghost cards keep the splash -> list hand-off continuous while page 1 loads.
+                state.isLoading -> SkeletonGrid()
 
                 state.errorMessage != null && state.pokemons.isEmpty() ->
                     ErrorState(message = state.errorMessage, onRetry = onRetry)
@@ -451,16 +466,106 @@ private fun PokemonCard(pokemon: Pokemon, onClick: () -> Unit) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                AsyncImage(
-                    model = pokemon.imageUrl,
-                    contentDescription = pokemon.name,
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .padding(top = 6.dp)
                         .size(108.dp)
-                        .align(Alignment.End)
-                        // Flies into the detail header (same key on both screens).
-                        .pokemonSharedElement("image-${pokemon.id}"),
+                        .align(Alignment.End),
+                ) {
+                    // A Poké Ball silhouette waits for the artwork, and stays if it fails to load.
+                    var artworkShown by remember(pokemon.imageUrl) { mutableStateOf(false) }
+                    if (!artworkShown) {
+                        Pokeball(
+                            color = base.copy(alpha = 0.35f),
+                            filled = true,
+                            modifier = Modifier.size(64.dp),
+                        )
+                    }
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalPlatformContext.current)
+                            .data(pokemon.imageUrl)
+                            .crossfade(true) // fades in when downloaded, instant from the memory cache
+                            .build(),
+                        contentDescription = pokemon.name,
+                        onState = { artworkShown = it is AsyncImagePainter.State.Success },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            // Flies into the detail header (same key on both screens).
+                            .pokemonSharedElement("image-${pokemon.id}"),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Six ghost cards (same shape as [PokemonCard]) with a shimmer sweeping across them. */
+@Composable
+private fun SkeletonGrid() {
+    val shimmer = rememberInfiniteTransition(label = "skeleton")
+    val sweep by shimmer.animateFloat(
+        initialValue = -1f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(tween(durationMillis = 1200, easing = LinearEasing)),
+        label = "skeletonSweep",
+    )
+    val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        userScrollEnabled = false,
+        modifier = Modifier
+            .fillMaxSize()
+            .semantics { contentDescription = "Loading Pokémon" },
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + bottomInset),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        items(6) { index -> SkeletonCard(tint = cardColorForId(index + 1), sweep = sweep) }
+    }
+}
+
+@Composable
+private fun SkeletonCard(tint: Color, sweep: Float) {
+    val bone = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+    val highlight = MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(tint.copy(alpha = 0.10f))
+            .drawWithContent {
+                drawContent()
+                // Diagonal light band moving left to right across the card.
+                val x = size.width * sweep
+                drawRect(
+                    Brush.linearGradient(
+                        colors = listOf(Color.Transparent, highlight, Color.Transparent),
+                        start = Offset(x - size.width * 0.5f, 0f),
+                        end = Offset(x + size.width * 0.5f, size.height),
+                    ),
                 )
+            },
+    ) {
+        Pokeball(
+            color = tint.copy(alpha = 0.18f),
+            filled = false,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 22.dp, y = 22.dp)
+                .size(96.dp),
+        )
+        Column(modifier = Modifier.padding(14.dp)) {
+            Box(Modifier.padding(top = 2.dp).size(width = 40.dp, height = 12.dp).clip(RoundedCornerShape(50)).background(bone))
+            Box(Modifier.padding(top = 8.dp).size(width = 96.dp, height = 16.dp).clip(RoundedCornerShape(50)).background(bone))
+            Box(
+                Modifier
+                    .padding(top = 8.dp)
+                    .size(108.dp)
+                    .align(Alignment.End),
+                contentAlignment = Alignment.Center,
+            ) {
+                Pokeball(color = tint.copy(alpha = 0.22f), filled = true, modifier = Modifier.size(64.dp))
             }
         }
     }
