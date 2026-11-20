@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.daggerpokedex.DaggerPokedexApp
 import com.example.daggerpokedex.domain.model.Pokemon
@@ -31,6 +32,7 @@ import com.example.daggerpokedex.presentation.components.LocalSharedTransitionSc
 import com.example.daggerpokedex.presentation.components.rememberMusicController
 import com.example.daggerpokedex.presentation.detail.PokemonDetailScreen
 import com.example.daggerpokedex.presentation.detail.PokemonDetailViewModel
+import com.example.daggerpokedex.presentation.detail.neighborsOf
 import com.example.daggerpokedex.presentation.list.PokemonListScreen
 import com.example.daggerpokedex.presentation.list.PokemonListViewModel
 import com.example.daggerpokedex.presentation.splash.SplashScreen
@@ -149,12 +151,22 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
                     // Dagger-built instance (no stale previous-Pokémon state).
                     val detailViewModel: PokemonDetailViewModel =
                         viewModel(key = name, factory = viewModelFactory)
+                    // Same Activity-scoped instance as the list's: its loaded Pokémon give the
+                    // previous / next entries to flip to from the detail.
+                    val listViewModel: PokemonListViewModel = viewModel(factory = viewModelFactory)
+                    val listState by listViewModel.state.collectAsStateWithLifecycle()
+                    val neighbors = remember(listState.pokemons, name) { neighborsOf(listState.pokemons, name) }
                     PokemonDetailScreen(
                         name = name,
                         seed = seed?.takeIf { it.name == name },
                         viewModel = detailViewModel,
                         onBack = { selectedName = null },
                         onCryPlayingChange = musicController::duck,
+                        neighbors = neighbors,
+                        onNavigate = { pokemon ->
+                            seed = pokemon
+                            selectedName = pokemon.name
+                        },
                     )
                 }
             }

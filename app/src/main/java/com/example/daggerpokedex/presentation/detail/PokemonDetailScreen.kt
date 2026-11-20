@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -42,9 +44,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,6 +66,7 @@ import com.example.daggerpokedex.presentation.components.rememberCryPlayer
 import com.example.daggerpokedex.presentation.components.StatusBarIcons
 import com.example.daggerpokedex.presentation.theme.cardColorForId
 import com.example.daggerpokedex.presentation.theme.colorForType
+import kotlin.math.abs
 
 /**
  * @param seed the tapped list item, used to render the header (and drive the
@@ -72,6 +80,8 @@ fun PokemonDetailScreen(
     viewModel: PokemonDetailViewModel,
     onBack: () -> Unit,
     onCryPlayingChange: (Boolean) -> Unit = {},
+    neighbors: Neighbors = Neighbors(previous = null, next = null),
+    onNavigate: (Pokemon) -> Unit = {},
 ) {
     LaunchedEffect(name) { viewModel.load(name) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -127,6 +137,8 @@ fun PokemonDetailScreen(
             accent = accent,
             onBack = onBack,
             onCry = cryUrl?.let { url -> { cryPlayer.play(url) } },
+            neighbors = neighbors,
+            onNavigate = onNavigate,
         )
 
         when {
@@ -165,10 +177,13 @@ private fun ColoredHeader(
     accent: Color,
     onBack: () -> Unit,
     onCry: (() -> Unit)? = null,
+    neighbors: Neighbors = Neighbors(previous = null, next = null),
+    onNavigate: (Pokemon) -> Unit = {},
 ) {
     // The header is drawn under the status bar: grow it by the bar's height and push
     // its content (buttons, name) below the bar.
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val layoutDirection = LocalLayoutDirection.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -176,7 +191,24 @@ private fun ColoredHeader(
             // The container that morphs from the tapped card.
             .pokemonSharedBounds("container-$id")
             .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
-            .background(Brush.verticalGradient(listOf(accent, accent.copy(alpha = 0.75f)))),
+            .background(Brush.verticalGradient(listOf(accent, accent.copy(alpha = 0.75f))))
+            // Swipe the header sideways to flip to the previous / next Pokémon.
+            .pointerInput(neighbors, layoutDirection) {
+                var drag = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { drag = 0f },
+                    onHorizontalDrag = { _, amount -> drag += amount },
+                    onDragEnd = {
+                        val threshold = 72.dp.toPx()
+                        val forward = if (layoutDirection == LayoutDirection.Rtl) drag > 0 else drag < 0
+                        when {
+                            abs(drag) < threshold -> Unit
+                            forward -> neighbors.next?.let(onNavigate)
+                            else -> neighbors.previous?.let(onNavigate)
+                        }
+                    },
+                )
+            },
     ) {
         Pokeball(
             color = Color.White.copy(alpha = 0.18f),
@@ -258,6 +290,61 @@ private fun ColoredHeader(
                 // The artwork that flies from the card.
                 .pokemonSharedElement("image-$id"),
         )
+
+        // Drawn after the artwork so it never covers them on narrow screens.
+        neighbors.previous?.let { previous ->
+            NeighborButton(
+                pokemon = previous,
+                isNext = false,
+                onClick = { onNavigate(previous) },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 12.dp, bottom = 56.dp),
+            )
+        }
+        neighbors.next?.let { next ->
+            NeighborButton(
+                pokemon = next,
+                isNext = true,
+                onClick = { onNavigate(next) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 12.dp, bottom = 56.dp),
+            )
+        }
+    }
+}
+
+/** "‹ #024" / "#026 ›" pill that flips to the neighboring Pokémon. */
+@Composable
+private fun NeighborButton(pokemon: Pokemon, isNext: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        color = Color.White.copy(alpha = 0.25f),
+        modifier = modifier.semantics {
+            contentDescription = (if (isNext) "Next: " else "Previous: ") + pokemon.name
+        },
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .heightIn(min = 40.dp)
+                .padding(start = if (isNext) 12.dp else 4.dp, end = if (isNext) 4.dp else 12.dp),
+        ) {
+            if (!isNext) {
+                Icon(painterResource(R.drawable.ic_chevron_left), contentDescription = null, tint = Color.White)
+            }
+            Text(
+                text = "#%03d".format(pokemon.id),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+            )
+            if (isNext) {
+                Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = Color.White)
+            }
+        }
     }
 }
 
