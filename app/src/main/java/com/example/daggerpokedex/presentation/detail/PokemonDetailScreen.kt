@@ -1,6 +1,8 @@
 package com.example.daggerpokedex.presentation.detail
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,6 +34,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -281,7 +287,8 @@ private fun StatsSection(detail: PokemonDetail, accent: Color) {
                 .fillMaxWidth()
                 .padding(top = 4.dp),
         )
-        detail.stats.forEach { stat -> StatRow(stat = stat, accent = accent) }
+        detail.stats.forEachIndexed { index, stat -> StatRow(stat = stat, index = index, accent = accent) }
+        TotalRow(total = detail.stats.total(), accent = accent)
     }
 }
 
@@ -313,38 +320,75 @@ private fun InfoPill(label: String, value: String, accent: Color) {
     }
 }
 
+/** Width of the label and value columns, shared by the stat rows and the total. */
+private val StatLabelWidth = 64.dp
+private val StatValueWidth = 40.dp
+
+/**
+ * One base stat: short label, value, and a bar that grows from 0 when the stats appear,
+ * each row starting slightly after the previous one ([index]).
+ */
 @Composable
-private fun StatRow(stat: PokemonDetail.Stat, accent: Color) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                stat.name,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                stat.value.toString(),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+private fun StatRow(stat: PokemonDetail.Stat, index: Int, accent: Color) {
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { shown = true }
+    val fraction by animateFloatAsState(
+        targetValue = if (shown) (stat.value / 255f).coerceIn(0.02f, 1f) else 0f,
+        animationSpec = tween(durationMillis = 700, delayMillis = 80 * index, easing = FastOutSlowInEasing),
+        label = "stat-${stat.name}",
+    )
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            statLabel(stat.name),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(StatLabelWidth),
+        )
+        Text(
+            stat.value.toString(),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(StatValueWidth),
+        )
         Box(
             modifier = Modifier
-                .padding(top = 4.dp)
-                .fillMaxWidth()
+                .padding(start = 12.dp)
+                .weight(1f)
                 .height(8.dp)
                 .clip(RoundedCornerShape(50))
                 .background(accent.copy(alpha = 0.15f)),
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth((stat.value / 255f).coerceIn(0.02f, 1f))
+                    .fillMaxWidth(fraction)
                     .height(8.dp)
                     .clip(RoundedCornerShape(50))
                     .background(accent),
             )
         }
+    }
+}
+
+@Composable
+private fun TotalRow(total: Int, accent: Color) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            "TOTAL",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.width(StatLabelWidth),
+        )
+        Text(
+            total.toString(),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Black,
+            color = accent,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(StatValueWidth),
+        )
     }
 }
