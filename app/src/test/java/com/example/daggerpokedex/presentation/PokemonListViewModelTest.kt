@@ -2,6 +2,7 @@ package com.example.daggerpokedex.presentation
 
 import com.example.daggerpokedex.MainDispatcherRule
 import com.example.daggerpokedex.domain.model.Pokemon
+import com.example.daggerpokedex.domain.usecase.GetPokemonDetailUseCase
 import com.example.daggerpokedex.domain.usecase.GetPokemonListUseCase
 import com.example.daggerpokedex.domain.util.Resource
 import com.example.daggerpokedex.presentation.list.PokemonListViewModel
@@ -21,13 +22,14 @@ class PokemonListViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val getPokemonList: GetPokemonListUseCase = mockk()
+    private val getPokemonDetail: GetPokemonDetailUseCase = mockk()
 
     @Test
     fun `emits success state when use case returns data`() = runTest {
         val pokemons = listOf(Pokemon(25, "Pikachu", "url"))
         coEvery { getPokemonList(any()) } returns Resource.Success(pokemons)
 
-        val viewModel = PokemonListViewModel(getPokemonList)
+        val viewModel = PokemonListViewModel(getPokemonList, getPokemonDetail)
 
         val state = viewModel.state.value
         assertFalse(state.isLoading)
@@ -39,7 +41,7 @@ class PokemonListViewModelTest {
     fun `emits error state when use case fails`() = runTest {
         coEvery { getPokemonList(any()) } returns Resource.Error("boom")
 
-        val viewModel = PokemonListViewModel(getPokemonList)
+        val viewModel = PokemonListViewModel(getPokemonList, getPokemonDetail)
 
         val state = viewModel.state.value
         assertFalse(state.isLoading)
@@ -55,7 +57,7 @@ class PokemonListViewModelTest {
     fun `a failed next page keeps the list and is retried from the same page`() = runTest {
         coEvery { getPokemonList(0) } returns Resource.Success(page(0))
         coEvery { getPokemonList(1) } returns Resource.Error("offline") andThen Resource.Success(page(1))
-        val viewModel = PokemonListViewModel(getPokemonList)
+        val viewModel = PokemonListViewModel(getPokemonList, getPokemonDetail)
 
         viewModel.loadNextPage()
 

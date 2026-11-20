@@ -11,7 +11,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 
 /**
- * Looping background music, off by default.
+ * Looping background music. It plays by default; the user's on/off choice is remembered
+ * across launches, and the music is turned down while a Pokémon cry plays.
  *
  * ## No copyrighted asset ships with the app
  * The track is resolved **dynamically** by name (`res/raw/bgm.*`) at runtime, so
@@ -21,8 +22,14 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
  */
 class MusicController(context: Context) {
     private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private var player: MediaPlayer? = null
     private var wantPlaying = false
+    private var ducked = false
+
+    /** The last on/off choice, kept across launches (on until the user turns it off). */
+    val savedPreference: Boolean
+        get() = prefs.getBoolean(KEY_MUSIC_ON, true)
 
     /** True only when a `res/raw/bgm.*` track is present. */
     val hasTrack: Boolean
@@ -37,15 +44,29 @@ class MusicController(context: Context) {
             if (resId == 0) return null
             player = MediaPlayer.create(appContext, resId)?.apply {
                 isLooping = true
-                setVolume(0.35f, 0.35f) // stay in the background; never drown the cries
+                applyVolume(this)
             }
         }
         return player
     }
 
-    /** User intent: turn the music on or off. */
+    // Stay in the background; while a cry plays, almost fade out so it is clearly heard.
+    private fun applyVolume(p: MediaPlayer) {
+        val volume = if (ducked) DUCKED_VOLUME else NORMAL_VOLUME
+        p.setVolume(volume, volume)
+    }
+
+    /** Turns the music down while a Pokémon cry plays, and back up afterwards. */
+    fun duck(duck: Boolean) {
+        if (ducked == duck) return
+        ducked = duck
+        player?.let(::applyVolume)
+    }
+
+    /** User intent: turn the music on or off (remembered for the next launch). */
     fun setPlaying(play: Boolean) {
         wantPlaying = play
+        prefs.edit().putBoolean(KEY_MUSIC_ON, play).apply()
         val p = ensurePlayer() ?: return
         if (play && !p.isPlaying) p.start() else if (!play && p.isPlaying) p.pause()
     }
@@ -62,6 +83,13 @@ class MusicController(context: Context) {
     fun release() {
         player?.runCatching { release() }
         player = null
+    }
+
+    private companion object {
+        const val PREFS_NAME = "audio"
+        const val KEY_MUSIC_ON = "music_on"
+        const val NORMAL_VOLUME = 0.35f
+        const val DUCKED_VOLUME = 0.08f
     }
 }
 

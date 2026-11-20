@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,8 +33,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.daggerpokedex.presentation.components.Pokeball
+import com.example.daggerpokedex.presentation.components.StatusBarIcons
 import com.example.daggerpokedex.presentation.theme.PokeRed
 import kotlinx.coroutines.delay
 
@@ -70,9 +71,13 @@ fun SplashScreen(onFinished: () -> Unit) {
         label = "splashRotation",
     )
 
+    // White status bar icons on the red background.
+    StatusBarIcons(darkIcons = false)
+
     LaunchedEffect(Unit) {
         started = true
-        delay(1700)
+        // Long enough for the pop-in (700 ms) and a beat; the system splash already showed red.
+        delay(1000)
         onFinished()
     }
 
@@ -109,13 +114,12 @@ fun SplashScreen(onFinished: () -> Unit) {
             Text(
                 text = "Pokédex",
                 color = Color.White,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Black,
+                style = MaterialTheme.typography.displayMedium,
             )
             Text(
                 text = "Powered by Dagger 2",
                 color = Color.White.copy(alpha = 0.85f),
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(top = 0.dp),
             )

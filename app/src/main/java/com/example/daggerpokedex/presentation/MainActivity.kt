@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -22,14 +23,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.daggerpokedex.DaggerPokedexApp
+import com.example.daggerpokedex.R
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.presentation.components.LocalNavAnimatedScope
 import com.example.daggerpokedex.presentation.components.LocalSharedTransitionScope
 import com.example.daggerpokedex.presentation.components.rememberMusicController
 import com.example.daggerpokedex.presentation.detail.PokemonDetailScreen
 import com.example.daggerpokedex.presentation.detail.PokemonDetailViewModel
+import com.example.daggerpokedex.presentation.detail.neighborsOf
 import com.example.daggerpokedex.presentation.list.PokemonListScreen
 import com.example.daggerpokedex.presentation.list.PokemonListViewModel
 import com.example.daggerpokedex.presentation.splash.SplashScreen
@@ -60,7 +64,12 @@ class MainActivity : ComponentActivity() {
         // Inject fields BEFORE using them. Grab the app-wide component from the
         // Application and let Dagger populate `viewModelFactory`.
         (application as DaggerPokedexApp).appComponent.inject(this)
+        // The manifest launches us with a red "starting" theme (no white flash before the
+        // Compose splash); back to the regular theme now that the window is up.
+        setTheme(R.style.Theme_DaggerPokedex)
         super.onCreate(savedInstanceState)
+        // Draw behind the system bars; every screen pads its own content with the insets.
+        enableEdgeToEdge()
 
         setContent {
             DaggerPokedexTheme {
@@ -96,7 +105,8 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
 
     val listState = rememberLazyGridState()
     val musicController = rememberMusicController()
-    var isMusicPlaying by rememberSaveable { mutableStateOf(true) }
+    // Plays by default, but a user who turned it off finds it off at the next launch.
+    var isMusicPlaying by rememberSaveable { mutableStateOf(musicController.savedPreference) }
 
     // Sync the controller with the saved state on first composition or state change
     LaunchedEffect(isMusicPlaying) {
@@ -145,11 +155,22 @@ private fun AppRoot(viewModelFactory: ViewModelProvider.Factory) {
                     // Dagger-built instance (no stale previous-Pokémon state).
                     val detailViewModel: PokemonDetailViewModel =
                         viewModel(key = name, factory = viewModelFactory)
+                    // Same Activity-scoped instance as the list's: its loaded Pokémon give the
+                    // previous / next entries to flip to from the detail.
+                    val listViewModel: PokemonListViewModel = viewModel(factory = viewModelFactory)
+                    val listState by listViewModel.state.collectAsStateWithLifecycle()
+                    val neighbors = remember(listState.pokemons, name) { neighborsOf(listState.pokemons, name) }
                     PokemonDetailScreen(
                         name = name,
                         seed = seed?.takeIf { it.name == name },
                         viewModel = detailViewModel,
                         onBack = { selectedName = null },
+                        onCryPlayingChange = musicController::duck,
+                        neighbors = neighbors,
+                        onNavigate = { pokemon ->
+                            seed = pokemon
+                            selectedName = pokemon.name
+                        },
                     )
                 }
             }

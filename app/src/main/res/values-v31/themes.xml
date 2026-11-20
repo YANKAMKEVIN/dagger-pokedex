@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ always shows a system splash screen: make it the same red with the
+         same white Poké Ball as the Compose splash that follows. -->
+    <style name="Theme.DaggerPokedex.Starting">
+        <item name="android:windowBackground">@color/poke_red</item>
+        <item name="android:windowSplashScreenBackground">@color/poke_red</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_pokeball</item>
+    </style>
+</resources>
