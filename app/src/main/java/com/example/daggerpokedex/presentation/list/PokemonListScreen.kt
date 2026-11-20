@@ -91,7 +91,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
@@ -381,13 +380,12 @@ private fun Header(
                 Column(modifier = Modifier.padding(top = 16.dp)) {
                     Text(
                         text = "Pokédex",
-                        fontSize = 34.sp,
-                        fontWeight = FontWeight.Black,
+                        style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
                         text = subtitle,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
                     )
@@ -443,7 +441,7 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
                     Text(
                         text = "e.g. Pikachu or 025",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
                 BasicTextField(
@@ -628,14 +626,12 @@ private fun PokemonCard(pokemon: Pokemon, onClick: () -> Unit) {
                 Text(
                     text = "#%03d".format(pokemon.id),
                     color = base,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
+                    style = MaterialTheme.typography.labelMedium,
                 )
                 Text(
                     text = pokemon.name,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

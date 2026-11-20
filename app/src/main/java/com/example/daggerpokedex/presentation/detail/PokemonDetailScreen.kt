@@ -55,7 +55,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.daggerpokedex.R
@@ -285,14 +284,12 @@ private fun ColoredHeader(
             Text(
                 text = "#%03d".format(id),
                 color = contentColor.copy(alpha = 0.85f),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleSmall,
             )
             Text(
                 text = name,
                 color = contentColor,
-                fontWeight = FontWeight.Black,
-                fontSize = 34.sp,
+                style = MaterialTheme.typography.displaySmall,
             )
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -366,8 +363,8 @@ private fun NeighborButton(
             Text(
                 text = "#%03d".format(pokemon.id),
                 color = contentColor,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
             )
             if (isNext) {
                 Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = contentColor)
@@ -395,8 +392,7 @@ private fun StatsSection(detail: PokemonDetail, accent: Color) {
 
         Text(
             text = "Base stats",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleLarge,
             color = accent,
             modifier = Modifier
                 .fillMaxWidth()
@@ -419,8 +415,8 @@ private fun TypeChip(type: String, outline: Color) {
         Text(
             text = type,
             color = contentColorOn(color),
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
         )
     }
@@ -429,10 +425,10 @@ private fun TypeChip(type: String, outline: Color) {
 @Composable
 private fun InfoPill(label: String, value: String, accent: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = accent)
+        Text(value, style = MaterialTheme.typography.titleLarge, color = accent)
         Text(
             label,
-            fontSize = 13.sp,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -458,14 +454,14 @@ private fun StatRow(stat: PokemonDetail.Stat, index: Int, accent: Color) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             statLabel(stat.name),
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(StatLabelWidth),
         )
         Text(
             stat.value.toString(),
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End,
@@ -495,14 +491,14 @@ private fun TotalRow(total: Int, accent: Color) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             "TOTAL",
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.width(StatLabelWidth),
         )
         Text(
             total.toString(),
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Black,
             color = accent,
             textAlign = TextAlign.End,
