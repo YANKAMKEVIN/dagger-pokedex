@@ -1,5 +1,14 @@
 package com.example.daggerpokedex.presentation.list
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -32,12 +41,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
@@ -59,6 +70,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -87,6 +99,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.example.daggerpokedex.R
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.presentation.components.Pokeball
@@ -183,9 +196,16 @@ private fun PokemonListContent(
             .statusBarsPadding()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
     ) {
+        // Once the user scrolls past the first rows, fold the title away (only the search stays)
+        // and offer a quick way back to the top.
+        val collapsed by remember { derivedStateOf { gridState.firstVisibleItemIndex > 1 } }
+        val showBackToTop by remember { derivedStateOf { gridState.firstVisibleItemIndex >= 6 } }
+        val scope = rememberCoroutineScope()
+
         Header(
             query = query,
             onQueryChange = onQueryChange,
+            collapsed = collapsed,
             isMusicPlaying = isMusicPlaying,
             showMusicToggle = showMusicToggle,
             onToggleMusic = onToggleMusic
@@ -234,67 +254,156 @@ private fun PokemonListContent(
                     onRetryLoadMore = onRetryLoadMore,
                 )
             }
+
+            val bottomInset = WindowInsets.navigationBars.union(WindowInsets.ime)
+                .asPaddingValues().calculateBottomPadding()
+            BackToTopButton(
+                visible = showBackToTop && !state.isLoading && visiblePokemons.isNotEmpty(),
+                onClick = { scope.launch { gridState.animateScrollToItem(0) } },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = 20.dp + bottomInset),
+            )
         }
     }
 }
 
-/** Bold title, a decorative Poké Ball peeking from the corner, and a search bar. */
+/** Red Poké Ball button that scrolls the grid back to the first Pokémon. */
+@Composable
+private fun BackToTopButton(visible: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = scaleIn() + fadeIn(),
+        exit = scaleOut() + fadeOut(),
+        modifier = modifier,
+    ) {
+        BackToTopFab(onClick)
+    }
+}
+
+@Composable
+private fun BackToTopFab(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = PokeRed,
+        shadowElevation = 6.dp,
+        modifier = Modifier.size(56.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Pokeball(color = Color.White.copy(alpha = 0.25f), filled = false, modifier = Modifier.fillMaxSize())
+            Icon(
+                painter = painterResource(R.drawable.ic_arrow_upward),
+                contentDescription = "Back to top",
+                tint = Color.White,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MusicToggle(isMusicPlaying: Boolean, onToggleMusic: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onToggleMusic,
+        shape = RoundedCornerShape(12.dp),
+        color = if (isMusicPlaying) PokeRed.copy(alpha = 0.1f) else Color.Transparent,
+        modifier = modifier,
+    ) {
+        Icon(
+            painter = painterResource(
+                if (isMusicPlaying) R.drawable.ic_music_note else R.drawable.ic_music_off,
+            ),
+            contentDescription = if (isMusicPlaying) "Mute music" else "Play music",
+            tint = if (isMusicPlaying) PokeRed else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(10.dp).size(24.dp),
+        )
+    }
+}
+
+/**
+ * Bold title, a decorative Poké Ball peeking from the corner, and a search bar. When
+ * [collapsed] (grid scrolled), the title folds away and the music toggle moves next to the
+ * search bar, which stays pinned.
+ */
 @Composable
 private fun Header(
     query: String,
     onQueryChange: (String) -> Unit,
+    collapsed: Boolean,
     isMusicPlaying: Boolean,
     showMusicToggle: Boolean,
     onToggleMusic: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxWidth()) {
-        // Faint ball peeking from the top-right.
-        Pokeball(
-            color = PokeRed.copy(alpha = 0.10f),
-            filled = false,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 40.dp, y = (-30).dp)
-                .size(160.dp),
-        )
-
-        if (showMusicToggle) {
-            Surface(
-                onClick = onToggleMusic,
-                shape = RoundedCornerShape(12.dp),
-                color = if (isMusicPlaying) PokeRed.copy(alpha = 0.1f) else Color.Transparent,
+        // Faint ball peeking from the top-right. It must not give the header its height
+        // (160 dp), or the folded header would keep an empty band above the grid.
+        Box(modifier = Modifier.matchParentSize()) {
+            Pokeball(
+                color = PokeRed.copy(alpha = 0.10f),
+                filled = false,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 16.dp, end = 16.dp)
+                    .wrapContentSize(Alignment.TopEnd, unbounded = true)
+                    .offset(x = 40.dp, y = (-30).dp)
+                    .size(160.dp),
+            )
+        }
+
+        if (showMusicToggle) {
+            AnimatedVisibility(
+                visible = !collapsed,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 16.dp, end = 16.dp),
             ) {
-                Icon(
-                    painter = painterResource(
-                        if (isMusicPlaying) R.drawable.ic_music_note else R.drawable.ic_music_off,
-                    ),
-                    contentDescription = if (isMusicPlaying) "Mute music" else "Play music",
-                    tint = if (isMusicPlaying) PokeRed else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(10.dp).size(24.dp),
-                )
+                MusicToggle(isMusicPlaying = isMusicPlaying, onToggleMusic = onToggleMusic)
             }
         }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 12.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp),
         ) {
-            Text(
-                text = "Pokédex",
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                text = "Search a Pokémon by name or number",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
-            )
-            SearchField(query = query, onQueryChange = onQueryChange)
+            AnimatedVisibility(
+                visible = !collapsed,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                Column(modifier = Modifier.padding(top = 16.dp)) {
+                    Text(
+                        text = "Pokédex",
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Text(
+                        text = "Search a Pokémon by name or number",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
+                    )
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.weight(1f)) {
+                    SearchField(query = query, onQueryChange = onQueryChange)
+                }
+                if (showMusicToggle) {
+                    AnimatedVisibility(
+                        visible = collapsed,
+                        enter = expandHorizontally() + fadeIn(),
+                        exit = shrinkHorizontally() + fadeOut(),
+                    ) {
+                        MusicToggle(
+                            isMusicPlaying = isMusicPlaying,
+                            onToggleMusic = onToggleMusic,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+            }
         }
     }
 }
