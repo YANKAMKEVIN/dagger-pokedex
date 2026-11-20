@@ -470,6 +470,12 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
     }
 }
 
+/**
+ * As many columns as fit cards at least 150 dp wide: two on phones in portrait (150 rather
+ * than 160 so 360 dp phones keep two), four or more in landscape and on tablets.
+ */
+private val PokemonGridColumns = GridCells.Adaptive(minSize = 150.dp)
+
 @Composable
 private fun PokemonGrid(
     pokemons: List<Pokemon>,
@@ -495,7 +501,7 @@ private fun PokemonGrid(
 
     LazyVerticalGrid(
         state = gridState,
-        columns = GridCells.Fixed(2),
+        columns = PokemonGridColumns,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + bottomInset),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -647,7 +653,7 @@ private fun SkeletonGrid() {
     )
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+        columns = PokemonGridColumns,
         userScrollEnabled = false,
         modifier = Modifier
             .fillMaxSize()
