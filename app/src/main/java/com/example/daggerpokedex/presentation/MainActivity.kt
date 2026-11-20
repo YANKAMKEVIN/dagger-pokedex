@@ -26,6 +26,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.daggerpokedex.DaggerPokedexApp
+import com.example.daggerpokedex.R
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.presentation.components.LocalNavAnimatedScope
 import com.example.daggerpokedex.presentation.components.LocalSharedTransitionScope
@@ -63,6 +64,9 @@ class MainActivity : ComponentActivity() {
         // Inject fields BEFORE using them. Grab the app-wide component from the
         // Application and let Dagger populate `viewModelFactory`.
         (application as DaggerPokedexApp).appComponent.inject(this)
+        // The manifest launches us with a red "starting" theme (no white flash before the
+        // Compose splash); back to the regular theme now that the window is up.
+        setTheme(R.style.Theme_DaggerPokedex)
         super.onCreate(savedInstanceState)
         // Draw behind the system bars; every screen pads its own content with the insets.
         enableEdgeToEdge()

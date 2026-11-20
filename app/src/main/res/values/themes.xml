@@ -3,4 +3,11 @@
     <!-- A Compose app only needs a minimal Material theme with no action bar;
          the real theming happens in presentation/theme in Kotlin. -->
     <style name="Theme.DaggerPokedex" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Launch theme of MainActivity: a red window, so the app opens straight onto the
+         color of the Compose splash instead of flashing white first. MainActivity
+         switches back to Theme.DaggerPokedex in onCreate. -->
+    <style name="Theme.DaggerPokedex.Starting">
+        <item name="android:windowBackground">@color/poke_red</item>
+    </style>
 </resources>

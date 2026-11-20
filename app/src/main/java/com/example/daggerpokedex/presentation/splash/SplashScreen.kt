@@ -76,7 +76,8 @@ fun SplashScreen(onFinished: () -> Unit) {
 
     LaunchedEffect(Unit) {
         started = true
-        delay(1700)
+        // Long enough for the pop-in (700 ms) and a beat; the system splash already showed red.
+        delay(1000)
         onFinished()
     }
 
