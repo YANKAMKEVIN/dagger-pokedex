@@ -1,6 +1,7 @@
 package com.example.daggerpokedex.presentation.detail
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -43,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -137,6 +139,7 @@ fun PokemonDetailScreen(
             accent = accent,
             onBack = onBack,
             onCry = cryUrl?.let { url -> { cryPlayer.play(url) } },
+            isCryPlaying = isCryPlaying,
             neighbors = neighbors,
             onNavigate = onNavigate,
         )
@@ -172,6 +175,7 @@ private fun ColoredHeader(
     accent: Color,
     onBack: () -> Unit,
     onCry: (() -> Unit)? = null,
+    isCryPlaying: Boolean = false,
     neighbors: Neighbors = Neighbors(previous = null, next = null),
     onNavigate: (Pokemon) -> Unit = {},
 ) {
@@ -231,8 +235,19 @@ private fun ColoredHeader(
             }
         }
 
-        // Replay the cry (top-right, mirroring the back button).
+        // Replay the cry (top-right, mirroring the back button). It pulses while the cry plays.
         if (onCry != null) {
+            val cryScale = remember { Animatable(1f) }
+            LaunchedEffect(isCryPlaying) {
+                if (isCryPlaying) {
+                    while (true) {
+                        cryScale.animateTo(1.15f, tween(300))
+                        cryScale.animateTo(1f, tween(300))
+                    }
+                } else {
+                    cryScale.animateTo(1f, tween(150))
+                }
+            }
             Surface(
                 onClick = onCry,
                 shape = RoundedCornerShape(50),
@@ -240,6 +255,10 @@ private fun ColoredHeader(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = 12.dp, top = 12.dp + statusBarTop)
+                    .graphicsLayer {
+                        scaleX = cryScale.value
+                        scaleY = cryScale.value
+                    }
                     .size(44.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
