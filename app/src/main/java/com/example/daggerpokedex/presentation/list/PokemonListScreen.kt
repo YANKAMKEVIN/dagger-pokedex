@@ -6,6 +6,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -46,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,6 +66,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.daggerpokedex.domain.model.Pokemon
 import com.example.daggerpokedex.presentation.components.Pokeball
+import com.example.daggerpokedex.presentation.components.StatusBarIcons
 import com.example.daggerpokedex.presentation.components.pokemonSharedBounds
 import com.example.daggerpokedex.presentation.components.pokemonSharedElement
 import com.example.daggerpokedex.presentation.theme.PokeRed
@@ -116,10 +128,16 @@ private fun PokemonListContent(
     onLoadMore: () -> Unit,
     onRetryLoadMore: () -> Unit,
 ) {
+    // The light background needs dark status bar icons (and the dark theme light ones).
+    StatusBarIcons(darkIcons = MaterialTheme.colorScheme.background.luminance() > 0.5f)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            // Keep the header below the status bar and clear of side bars / cutouts in landscape.
+            .statusBarsPadding()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
     ) {
         Header(
             query = query,
@@ -289,11 +307,16 @@ private fun PokemonGrid(
         if (shouldLoadMore) onLoadMore()
     }
 
+    // The grid scrolls under the navigation bar (and the keyboard), but its last row can
+    // still scroll fully above them.
+    val bottomInset = WindowInsets.navigationBars.union(WindowInsets.ime)
+        .asPaddingValues().calculateBottomPadding()
+
     LazyVerticalGrid(
         state = gridState,
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp + bottomInset),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {

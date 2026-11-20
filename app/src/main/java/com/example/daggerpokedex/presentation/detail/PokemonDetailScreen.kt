@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,6 +46,7 @@ import com.example.daggerpokedex.presentation.components.Pokeball
 import com.example.daggerpokedex.presentation.components.pokemonSharedBounds
 import com.example.daggerpokedex.presentation.components.pokemonSharedElement
 import com.example.daggerpokedex.presentation.components.rememberCryPlayer
+import com.example.daggerpokedex.presentation.components.StatusBarIcons
 import com.example.daggerpokedex.presentation.theme.cardColorForId
 import com.example.daggerpokedex.presentation.theme.colorForType
 
@@ -90,6 +95,9 @@ fun PokemonDetailScreen(
     val cryUrl = detail?.cryUrl
     LaunchedEffect(cryUrl) { cryUrl?.let(cryPlayer::play) }
 
+    // The colored header runs under the status bar: white icons, like the header text.
+    StatusBarIcons(darkIcons = false)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -127,6 +135,9 @@ fun PokemonDetailScreen(
                 contentAlignment = Alignment.Center,
             ) { CircularProgressIndicator(color = accent) }
         }
+
+        // Lets the end of the page scroll above the navigation bar.
+        Spacer(Modifier.navigationBarsPadding())
     }
 }
 
@@ -140,10 +151,13 @@ private fun ColoredHeader(
     onBack: () -> Unit,
     onCry: (() -> Unit)? = null,
 ) {
+    // The header is drawn under the status bar: grow it by the bar's height and push
+    // its content (buttons, name) below the bar.
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(360.dp)
+            .height(360.dp + statusBarTop)
             // The container that morphs from the tapped card.
             .pokemonSharedBounds("container-$id")
             .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
@@ -163,7 +177,7 @@ private fun ColoredHeader(
             shape = RoundedCornerShape(50),
             color = Color.White.copy(alpha = 0.25f),
             modifier = Modifier
-                .padding(start = 12.dp, top = 12.dp)
+                .padding(start = 12.dp, top = 12.dp + statusBarTop)
                 .size(44.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -179,7 +193,7 @@ private fun ColoredHeader(
                 color = Color.White.copy(alpha = 0.25f),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(end = 12.dp, top = 12.dp)
+                    .padding(end = 12.dp, top = 12.dp + statusBarTop)
                     .size(44.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -191,7 +205,7 @@ private fun ColoredHeader(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 64.dp, start = 24.dp, end = 24.dp),
+                .padding(top = 64.dp + statusBarTop, start = 24.dp, end = 24.dp),
         ) {
             Text(
                 text = "#%03d".format(id),

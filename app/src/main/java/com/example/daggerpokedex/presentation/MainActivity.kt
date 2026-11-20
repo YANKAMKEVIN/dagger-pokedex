@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -61,6 +62,8 @@ class MainActivity : ComponentActivity() {
         // Application and let Dagger populate `viewModelFactory`.
         (application as DaggerPokedexApp).appComponent.inject(this)
         super.onCreate(savedInstanceState)
+        // Draw behind the system bars; every screen pads its own content with the insets.
+        enableEdgeToEdge()
 
         setContent {
             DaggerPokedexTheme {

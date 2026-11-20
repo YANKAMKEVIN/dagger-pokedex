@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.daggerpokedex.presentation.components.Pokeball
+import com.example.daggerpokedex.presentation.components.StatusBarIcons
 import com.example.daggerpokedex.presentation.theme.PokeRed
 import kotlinx.coroutines.delay
 
@@ -69,6 +70,9 @@ fun SplashScreen(onFinished: () -> Unit) {
         ),
         label = "splashRotation",
     )
+
+    // White status bar icons on the red background.
+    StatusBarIcons(darkIcons = false)
 
     LaunchedEffect(Unit) {
         started = true
