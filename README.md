@@ -15,8 +15,11 @@ heavily commented so you can learn the graph just by reading the code.
 - **Animated splash** — a spinning Poké Ball over a red gradient
   (`presentation/splash/SplashScreen.kt`), drawn entirely with Canvas (no image
   asset) via the reusable `components/Pokeball.kt`.
-- **Home** — bold title, a live **client-side search** that filters the loaded
-  list by name or number, and colorful rounded cards with a Poké Ball watermark.
+- **Home** — bold title that folds away on scroll, a live **search** that filters
+  the loaded list by name or number (`#025`, `Mr. Mime` work too) and, when nothing
+  loaded matches, looks the query up in the whole Pokédex; colorful rounded cards
+  with a Poké Ball watermark, skeleton cards on the first load, a retry footer when a
+  further page fails, a "back to top" button and an adaptive number of columns.
 - **Detail** — an immersive header tinted by the Pokémon's **primary type**
   (`presentation/theme/PokemonColors.kt`), overlapping artwork, type chips, and
   type-colored stat bars.
@@ -25,6 +28,9 @@ heavily commented so you can learn the graph just by reading the code.
   wired in `presentation/components/SharedTransition.kt`). The header renders from
   the tapped item immediately so the animation has a destination while the detail
   loads, and the card's color cross-fades to the real type color.
+- **Detail extras** — the Pokémon's cry streamed from PokéAPI (background music
+  steps aside meanwhile, and the music on/off choice is remembered), animated stat
+  bars with a total, and previous / next chevrons or a swipe on the header.
 - **App icon** — an adaptive Poké Ball launcher icon drawn as vectors
   (`res/drawable/ic_launcher_*.xml`), including a monochrome layer for Android 13+
   themed icons and a circular fallback for API < 26.
@@ -260,10 +266,12 @@ app/src/main/java/com/example/daggerpokedex/
 │   └── repository/PokemonRepositoryImpl.kt
 └── presentation/                # MVVM + Compose
     ├── MainActivity.kt          #   field injection + tiny nav host
-    ├── list/                    #   ViewModel · State · Screen
-    ├── detail/                  #   ViewModel · State · Screen
+    ├── list/                    #   ViewModel · State · Screen · search helpers
+    ├── detail/                  #   ViewModel · State · Screen · stat helpers
+    ├── components/              #   Poké Ball, error state, music, cries, transitions
     ├── navigation/Screen.kt
-    └── theme/Theme.kt
+    ├── splash/SplashScreen.kt
+    └── theme/                   #   Theme, typography, type colors
 ```
 
 **Suggested reading order:** `DaggerPokedexApp` → `AppComponent` → `NetworkModule`
@@ -282,7 +290,7 @@ newer JDK, so you don't need to install one manually.
 # Build the debug APK
 ./gradlew :app:assembleDebug
 
-# Run the unit tests (use case + ViewModel)
+# Run the unit tests (use case, ViewModels, search, formatting, colors)
 ./gradlew :app:testDebugUnitTest
 
 # Install on a connected device / emulator
@@ -321,15 +329,14 @@ Ideas to extend the sample and explore more Dagger:
   call, using Dagger's assisted injection.
 - **`@BindsInstance`.** Pass the Android `Context` (or a `BuildConfig` flag) into
   the graph via `AppComponent.Factory.create(@BindsInstance context: Context)`.
-- **Preserve list scroll across navigation.** The list keeps its data when you
-  return from the detail (the ViewModel is retained), but the grid scroll
-  position resets to the top. Hoisting the `LazyGridState` or moving to
-  Navigation-Compose with a back stack would keep it.
+- **Navigation-Compose.** The tiny `selectedName` host in `MainActivity` could
+  become a real back stack (deep links, several screens).
 
 > **Already implemented:** infinite-scroll paging (see `PokemonListViewModel.loadNextPage`
 > + the `reachedBottom` trigger in `PokemonListScreen`), a scrollable detail
-> screen, and a `BackHandler` so system Back returns to the list instead of
-> closing the app.
+> screen, a `BackHandler` so system Back returns to the list instead of
+> closing the app, and the list scroll position kept across navigation (the
+> `LazyGridState` is hoisted into `AppRoot`).
 
 ---
 
