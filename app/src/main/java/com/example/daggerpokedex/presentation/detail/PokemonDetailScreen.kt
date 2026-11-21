@@ -69,6 +69,7 @@ import com.example.daggerpokedex.presentation.components.StatusBarIcons
 import com.example.daggerpokedex.presentation.theme.cardColorForId
 import com.example.daggerpokedex.presentation.theme.colorForType
 import com.example.daggerpokedex.presentation.theme.contentColorOn
+import com.example.daggerpokedex.presentation.theme.readableAccentOn
 import kotlin.math.abs
 
 /**
@@ -149,7 +150,12 @@ fun PokemonDetailScreen(
         )
 
         when {
-            detail != null -> StatsSection(detail = detail, accent = accent)
+            detail != null -> StatsSection(
+                detail = detail,
+                accent = accent,
+                // Type-colored text, darkened where the type color is too light to read on the page.
+                textAccent = readableAccentOn(accent, MaterialTheme.colorScheme.background),
+            )
 
             state.errorMessage != null -> PokedexErrorState(
                 message = state.errorMessage!!,
@@ -374,7 +380,7 @@ private fun NeighborButton(
 }
 
 @Composable
-private fun StatsSection(detail: PokemonDetail, accent: Color) {
+private fun StatsSection(detail: PokemonDetail, accent: Color, textAccent: Color) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -386,20 +392,20 @@ private fun StatsSection(detail: PokemonDetail, accent: Color) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            InfoPill(label = "Height", value = "${detail.heightMeters} m", accent = accent)
-            InfoPill(label = "Weight", value = "${detail.weightKilograms} kg", accent = accent)
+            InfoPill(label = "Height", value = "${detail.heightMeters} m", accent = textAccent)
+            InfoPill(label = "Weight", value = "${detail.weightKilograms} kg", accent = textAccent)
         }
 
         Text(
             text = "Base stats",
             style = MaterialTheme.typography.titleLarge,
-            color = accent,
+            color = textAccent,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp),
         )
         detail.stats.forEachIndexed { index, stat -> StatRow(stat = stat, index = index, accent = accent) }
-        TotalRow(total = detail.stats.total(), accent = accent)
+        TotalRow(total = detail.stats.total(), accent = textAccent)
     }
 }
 
