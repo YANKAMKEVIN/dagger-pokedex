@@ -128,11 +128,8 @@ fun PokemonListScreen(
     // Search filters the already-loaded page(s) by name or Pokédex number (and falls back to a
     // lookup in the whole Pokédex, below, when nothing matches).
     val visiblePokemons = remember(state.pokemons, query) {
-        val q = query.trim()
-        if (q.isEmpty()) state.pokemons
-        else state.pokemons.filter {
-            it.name.contains(q, ignoreCase = true) || it.id.toString().contains(q)
-        }
+        if (query.isBlank()) state.pokemons
+        else state.pokemons.filter { it.matchesQuery(query) }
     }
 
     // Nothing loaded matches: after a short pause in typing, look the query up in the whole
