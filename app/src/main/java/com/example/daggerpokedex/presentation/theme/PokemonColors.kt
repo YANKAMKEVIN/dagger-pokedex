@@ -1,6 +1,7 @@
 package com.example.daggerpokedex.presentation.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 
 /**
@@ -40,6 +41,29 @@ val DarkInk = Color(0xFF1B1B2F)
  */
 fun contentColorOn(background: Color): Color =
     if (background.luminance() > 0.5f) DarkInk else Color.White
+
+/** WCAG contrast ratio between two colors, from 1 (same luminance) to 21 (black on white). */
+fun contrastRatio(a: Color, b: Color): Float {
+    val la = a.luminance()
+    val lb = b.luminance()
+    return (maxOf(la, lb) + 0.05f) / (minOf(la, lb) + 0.05f)
+}
+
+/**
+ * [accent] as a text color on [background]: unchanged when it is already readable (WCAG AA,
+ * [minContrast] 4.5), otherwise darkened (light background) or lightened (dark background) just
+ * enough. Electric yellow or ice cyan text on the white detail page becomes a deep gold or teal
+ * of the same hue; bars and fills keep the true type color.
+ */
+fun readableAccentOn(accent: Color, background: Color, minContrast: Float = 4.5f): Color {
+    if (contrastRatio(accent, background) >= minContrast) return accent
+    val toward = if (background.luminance() > 0.5f) Color.Black else Color.White
+    for (step in 1..20) {
+        val candidate = lerp(accent, toward, step / 20f)
+        if (contrastRatio(candidate, background) >= minContrast) return candidate
+    }
+    return toward
+}
 
 /** Returns the color for a type name (case-insensitive), or a neutral fallback. */
 fun colorForType(type: String): Color =
